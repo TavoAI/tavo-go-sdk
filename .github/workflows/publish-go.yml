@@ -1,14 +1,14 @@
 name: Publish Go SDK
 
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: "Version to publish"
-        required: true
-        type: string
-  repository_dispatch:
-    types: [publish]
+    workflow_dispatch:
+        inputs:
+            version:
+                description: "Version to publish"
+                required: true
+                type: string
+    repository_dispatch:
+        types: [publish]
 
 jobs:
     publish:
