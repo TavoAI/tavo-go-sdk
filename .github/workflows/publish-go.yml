@@ -1,9 +1,10 @@
 name: Publish Go SDK
 
 on:
-    workflow_call:
+    workflow_dispatch:
         inputs:
             version:
+                description: "Version to publish"
                 required: true
                 type: string
 
@@ -54,4 +55,3 @@ jobs:
               run: |
                   echo "✅ Go SDK v${{ inputs.version }} published successfully!"
                   echo "📦 Go module available at: https://pkg.go.dev/github.com/TavoAI/tavo-go-sdk@v${{ inputs.version }}"
-
