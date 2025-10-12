@@ -49,6 +49,14 @@ jobs:
         run: |
           go build ./...
 
+      - name: Create source archive
+        run: |
+          # Wait a moment for any file writes to complete
+          sleep 2
+          # Create source code archive from the root of the repository
+          # Exclude .git directory and other files that might change during build
+          tar -czf tavo-go-sdk-v${{ env.VERSION }}-source.tar.gz --exclude='.git' --exclude='*.log' --exclude='tmp' --exclude='.DS_Store' .
+
       - name: Create Git tag for Go module
         run: |
           git config --local user.email "action@github.com"
@@ -57,11 +65,7 @@ jobs:
           TAG_NAME="v${{ env.VERSION }}"
           git tag "$TAG_NAME"
           git push origin "$TAG_NAME"
-
-      - name: Create source archive
-        run: |
-          # Create source code archive from the root of the repository
-          tar -czf tavo-go-sdk-v${{ env.VERSION }}-source.tar.gz .
+          tar -czf tavo-go-sdk-v${{ env.VERSION }}-source.tar.gz --exclude='.git' --exclude='*.log' --exclude='tmp' --exclude='.DS_Store' .
 
       - name: Upload source archive to release
         run: |
