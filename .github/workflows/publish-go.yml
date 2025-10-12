@@ -72,24 +72,12 @@ jobs:
           git tag "$TAG_NAME"
           git push origin "$TAG_NAME"
 
-      - name: Upload source archive to release
+      - name: Create GitHub release with source archive
         run: |
-          # Wait for the release to be created and then upload the source archive
-          # Retry up to 10 times with 30 second delays
-          for i in {1..10}; do
-            if gh release view v${{ env.VERSION }} --repo TavoAI/tavo-api >/dev/null 2>&1; then
-              echo "Release found, uploading source archive..."
-              gh release upload v${{ env.VERSION }} /tmp/tavo-go-sdk-v${{ env.VERSION }}-source.tar.gz --clobber --repo TavoAI/tavo-api
-              break
-            else
-              echo "Release not found yet, waiting 30 seconds... (attempt $i/10)"
-              sleep 30
-            fi
-          done
-          if [ $i -eq 10 ]; then
-            echo "❌ Release still not found after 10 attempts"
-            exit 1
-          fi
+          # Create a release in the Go SDK repository with the source archive
+          gh release create v${{ env.VERSION }} /tmp/tavo-go-sdk-v${{ env.VERSION }}-source.tar.gz \
+            --title "Go SDK v${{ env.VERSION }}" \
+            --notes "Automated release of Go SDK v${{ env.VERSION }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
