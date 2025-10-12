@@ -1,63 +1,76 @@
 name: Publish Go SDK
 
 on:
-    workflow_dispatch:
-        inputs:
-            version:
-                description: "Version to publish"
-                required: true
-                type: string
-    repository_dispatch:
-        types: [publish]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to publish"
+        required: true
+        type: string
+  repository_dispatch:
+    types: [publish]
 
 jobs:
-    publish:
-        name: Publish to Go Module Registry
-        runs-on: ubuntu-latest
+  publish:
+    name: Publish to Go Module Registry
+    runs-on: ubuntu-latest
 
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
 
-            - name: Setup Go
-              uses: actions/setup-go@v5
-              with:
-                  go-version: "1.21"
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.21"
 
-            - name: Update version
-              run: |
-                  # Strip 'v' prefix if present and update version in go.mod
-                  if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
-                    VERSION="${{ github.event.client_payload.version }}"
-                  else
-                    VERSION="${{ inputs.version }}"
-                  fi
-                  VERSION=${VERSION#v}  # Remove 'v' prefix if present
-                  # Go modules use semantic versioning, so we need to ensure the version is valid
-                  # The version should already be in the correct format from the release workflow
+      - name: Update version
+        run: |
+          # Strip 'v' prefix if present and update version in go.mod
+          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            VERSION="${{ github.event.client_payload.version }}"
+          else
+            VERSION="${{ inputs.version }}"
+          fi
+          VERSION=${VERSION#v}  # Remove 'v' prefix if present
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          # Go modules use semantic versioning, so we need to ensure the version is valid
+          # The version should already be in the correct format from the release workflow
 
-            - name: Tidy dependencies
-              run: |
-                  go mod tidy
+      - name: Tidy dependencies
+        run: |
+          go mod tidy
 
-            - name: Run tests
-              run: |
-                  go test ./...
+      - name: Run tests
+        run: |
+          go test ./...
 
-            - name: Build package
-              run: |
-                  go build ./...
+      - name: Build package
+        run: |
+          go build ./...
 
-            - name: Create Git tag for Go module
-              run: |
-                  git config --local user.email "action@github.com"
-                  git config --local user.name "GitHub Action"
-                  # Create and push the version tag
-                  TAG_NAME="v$VERSION"
-                  git tag "$TAG_NAME"
-                  git push origin "$TAG_NAME"
+      - name: Create Git tag for Go module
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          # Create and push the version tag
+          TAG_NAME="v${{ env.VERSION }}"
+          git tag "$TAG_NAME"
+          git push origin "$TAG_NAME"
 
-            - name: Notify success
-              run: |
-                  echo "✅ Go SDK v$VERSION published successfully!"
-                  echo "📦 Go module available at: https://pkg.go.dev/github.com/TavoAI/tavo-go-sdk@v$VERSION"
+      - name: Create source archive
+        run: |
+          # Create source code archive from the root of the repository
+          tar -czf tavo-go-sdk-v${{ env.VERSION }}-source.tar.gz .
+
+      - name: Upload source archive to release
+        run: |
+          # Upload the source archive to the GitHub release in the main repo
+          gh release upload v${{ env.VERSION }} tavo-go-sdk-v${{ env.VERSION }}-source.tar.gz --clobber --repo TavoAI/tavo-api
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Notify success
+        run: |
+          echo "✅ Go SDK v${{ env.VERSION }} published successfully!"
+          echo "📦 Go module available at: https://pkg.go.dev/github.com/TavoAI/tavo-go-sdk@v${{ env.VERSION }}"
