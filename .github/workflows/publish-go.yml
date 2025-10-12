@@ -24,6 +24,15 @@ jobs:
         with:
           go-version: "1.21"
 
+      - name: Create source archive
+        run: |
+          # Create source code archive immediately after setup, before any file modifications
+          # Strip 'v' prefix if present for filename
+          RAW_VERSION="${{ inputs.version || github.event.client_payload.version }}"
+          VERSION=${RAW_VERSION#v}
+          # Exclude .git directory and other files that might change during build
+          tar -czf tavo-go-sdk-v${VERSION}-source.tar.gz --exclude='.git' --exclude='*.log' --exclude='tmp' --exclude='.DS_Store' .
+
       - name: Update version
         run: |
           # Strip 'v' prefix if present and update version in go.mod
@@ -49,13 +58,9 @@ jobs:
         run: |
           go build ./...
 
-      - name: Create source archive
+      - name: Build package
         run: |
-          # Wait a moment for any file writes to complete
-          sleep 2
-          # Create source code archive from the root of the repository
-          # Exclude .git directory and other files that might change during build
-          tar -czf tavo-go-sdk-v${{ env.VERSION }}-source.tar.gz --exclude='.git' --exclude='*.log' --exclude='tmp' --exclude='.DS_Store' .
+          go build ./...
 
       - name: Create Git tag for Go module
         run: |
@@ -65,7 +70,6 @@ jobs:
           TAG_NAME="v${{ env.VERSION }}"
           git tag "$TAG_NAME"
           git push origin "$TAG_NAME"
-          tar -czf tavo-go-sdk-v${{ env.VERSION }}-source.tar.gz --exclude='.git' --exclude='*.log' --exclude='tmp' --exclude='.DS_Store' .
 
       - name: Upload source archive to release
         run: |
