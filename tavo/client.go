@@ -1,6 +1,7 @@
 package tavo
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -116,6 +117,95 @@ func (c *Client) makeRequest(method, path string, body interface{}) (map[string]
 	return result, nil
 }
 
+// makeRequestWithContext performs an HTTP request with context support for goroutines
+func (c *Client) makeRequestWithContext(ctx context.Context, method, path string, body interface{}) (map[string]interface{}, error) {
+	var resp *resty.Response
+	var err error
+
+	// Prepare request with context
+	req := c.httpClient.R().
+		SetContext(ctx).
+		SetHeader("Content-Type", "application/json").
+		SetHeader("Accept", "application/json")
+
+	if body != nil {
+		req.SetBody(body)
+	}
+
+	// Make request based on method
+	switch method {
+	case "GET":
+		resp, err = req.Get(path)
+	case "POST":
+		resp, err = req.Post(path)
+	case "PUT":
+		resp, err = req.Put(path)
+	case "DELETE":
+		resp, err = req.Delete(path)
+	case "PATCH":
+		resp, err = req.Patch(path)
+	default:
+		return nil, fmt.Errorf("unsupported HTTP method: %s", method)
+	}
+
+	if err != nil {
+		return nil, &TavoError{
+			Message:    fmt.Sprintf("Request failed: %v", err),
+			StatusCode: 0,
+		}
+	}
+
+	// Handle non-2xx responses
+	if resp.StatusCode() < 200 || resp.StatusCode() >= 300 {
+		tavoErr := &TavoError{
+			StatusCode: resp.StatusCode(),
+		}
+
+		// Try to parse error response
+		if err := json.Unmarshal(resp.Body(), tavoErr); err != nil {
+			// If we can't parse the error, use the status text
+			tavoErr.Message = resp.Status()
+		}
+
+		return nil, tavoErr
+	}
+
+	// Parse successful response
+	var result map[string]interface{}
+	if len(resp.Body()) > 0 {
+		if err := json.Unmarshal(resp.Body(), &result); err != nil {
+			return nil, &TavoError{
+				Message:    fmt.Sprintf("Failed to parse response: %v", err),
+				StatusCode: resp.StatusCode(),
+			}
+		}
+	} else {
+		result = make(map[string]interface{})
+	}
+
+	return result, nil
+}
+
+// makeRequestAsync performs an HTTP request asynchronously using goroutines
+func (c *Client) makeRequestAsync(ctx context.Context, method, path string, body interface{}) (<-chan map[string]interface{}, <-chan error) {
+	resultChan := make(chan map[string]interface{}, 1)
+	errorChan := make(chan error, 1)
+
+	go func() {
+		defer close(resultChan)
+		defer close(errorChan)
+
+		result, err := c.makeRequestWithContext(ctx, method, path, body)
+		if err != nil {
+			errorChan <- err
+			return
+		}
+		resultChan <- result
+	}()
+
+	return resultChan, errorChan
+}
+
 // HealthCheck performs a health check on the API
 func (c *Client) HealthCheck() (map[string]interface{}, error) {
 	return c.makeRequest("GET", "/api/v1/health", nil)
@@ -169,4 +259,21 @@ func (c *Client) Reports() *ReportOperations {
 // ScanRules returns the scan rule operations
 func (c *Client) ScanRules() *ScanRuleOperations {
 	return &ScanRuleOperations{client: c}
+}
+
+func (c *Client) Device() *DeviceOperations {
+	return &DeviceOperations{client: c}
+}
+
+func (c *Client) Scanner() *ScannerOperations {
+	return &ScannerOperations{client: c}
+}
+
+func (c *Client) CodeSubmission() *CodeSubmissionOperations {
+	return &CodeSubmissionOperations{client: c}
+}
+
+// WebSocket returns the WebSocket operations
+func (c *Client) WebSocket() *WebSocketOperations {
+	return NewWebSocketOperations(c)
 }
