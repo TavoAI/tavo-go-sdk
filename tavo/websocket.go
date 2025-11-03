@@ -311,13 +311,16 @@ func NewWebSocketOperations(client *Client) *WebSocketOperations {
 
 // ConnectToScanProgress connects to real-time scan progress updates for a specific scan
 func (ws *WebSocketOperations) ConnectToScanProgress(scanID string, config WebSocketConfig) (*WebSocketConnection, error) {
-	conn := NewWebSocketConnection(ws.client.baseURL, ws.client.apiKey, config)
-	conn.SetJWTToken(ws.client.jwtToken)
-	conn.SetSessionToken(ws.client.sessionToken)
+	baseURL := ws.client.GetBaseURL()
+	clientConfig := ws.client.GetConfig()
+
+	conn := NewWebSocketConnection(baseURL, clientConfig.APIKey, config)
+	conn.SetJWTToken(clientConfig.JWTToken)
+	conn.SetSessionToken(clientConfig.SessionToken)
 
 	// Set the specific endpoint for scan progress
-	conn.url = fmt.Sprintf("%s/api/v1/code/scans/%s/progress", ws.client.baseURL, scanID)
-	if ws.client.baseURL[:5] == "https" {
+	conn.url = fmt.Sprintf("%s/api/v1/code/scans/%s/progress", baseURL, scanID)
+	if baseURL[:5] == "https" {
 		conn.url = "wss" + conn.url[5:]
 	} else {
 		conn.url = "ws" + conn.url[4:]
@@ -332,9 +335,12 @@ func (ws *WebSocketOperations) ConnectToScanProgress(scanID string, config WebSo
 
 // ConnectToGeneralUpdates connects to general real-time updates
 func (ws *WebSocketOperations) ConnectToGeneralUpdates(config WebSocketConfig) (*WebSocketConnection, error) {
-	conn := NewWebSocketConnection(ws.client.baseURL, ws.client.apiKey, config)
-	conn.SetJWTToken(ws.client.jwtToken)
-	conn.SetSessionToken(ws.client.sessionToken)
+	baseURL := ws.client.GetBaseURL()
+	clientConfig := ws.client.GetConfig()
+
+	conn := NewWebSocketConnection(baseURL, clientConfig.APIKey, config)
+	conn.SetJWTToken(clientConfig.JWTToken)
+	conn.SetSessionToken(clientConfig.SessionToken)
 
 	if err := conn.Connect(); err != nil {
 		return nil, fmt.Errorf("failed to connect to general updates: %w", err)

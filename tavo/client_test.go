@@ -7,7 +7,8 @@ import (
 )
 
 func TestClient_makeRequestAsync(t *testing.T) {
-	client := NewClient(NewConfig().WithAPIKey("test-key"))
+	config := NewConfig().WithAPIKey("test-key").WithTimeout(100 * time.Millisecond).WithBaseURL("http://10.255.255.1").WithMaxRetries(0).WithBaseURL("http://10.255.255.1").WithMaxRetries(0)
+	client := NewClient(config)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -27,7 +28,8 @@ func TestClient_makeRequestAsync(t *testing.T) {
 }
 
 func TestClient_DeviceOperations(t *testing.T) {
-	client := NewClient(NewConfig().WithAPIKey("test-key"))
+	config := NewConfig().WithAPIKey("test-key").WithTimeout(100 * time.Millisecond).WithBaseURL("http://10.255.255.1").WithMaxRetries(0).WithBaseURL("http://10.255.255.1").WithMaxRetries(0)
+	client := NewClient(config)
 	deviceOps := client.Device()
 
 	if deviceOps == nil {
@@ -44,7 +46,8 @@ func TestClient_DeviceOperations(t *testing.T) {
 }
 
 func TestClient_ScannerOperations(t *testing.T) {
-	client := NewClient(NewConfig().WithAPIKey("test-key"))
+	config := NewConfig().WithAPIKey("test-key").WithTimeout(100 * time.Millisecond).WithBaseURL("http://10.255.255.1").WithMaxRetries(0)
+	client := NewClient(config)
 	scannerOps := client.Scanner()
 
 	if scannerOps == nil {
@@ -61,7 +64,8 @@ func TestClient_ScannerOperations(t *testing.T) {
 }
 
 func TestClient_CodeSubmissionOperations(t *testing.T) {
-	client := NewClient(NewConfig().WithAPIKey("test-key"))
+	config := NewConfig().WithAPIKey("test-key").WithTimeout(100 * time.Millisecond).WithBaseURL("http://10.255.255.1").WithMaxRetries(0)
+	client := NewClient(config)
 	codeOps := client.CodeSubmission()
 
 	if codeOps == nil {
@@ -77,7 +81,8 @@ func TestClient_CodeSubmissionOperations(t *testing.T) {
 }
 
 func TestDeviceOperations_AsyncMethods(t *testing.T) {
-	client := NewClient(NewConfig().WithAPIKey("test-key"))
+	config := NewConfig().WithAPIKey("test-key").WithTimeout(100 * time.Millisecond).WithBaseURL("http://10.255.255.1").WithMaxRetries(0)
+	client := NewClient(config)
 	deviceOps := client.Device()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
@@ -98,7 +103,8 @@ func TestDeviceOperations_AsyncMethods(t *testing.T) {
 }
 
 func TestScannerOperations_AsyncMethods(t *testing.T) {
-	client := NewClient(NewConfig().WithAPIKey("test-key"))
+	config := NewConfig().WithAPIKey("test-key").WithTimeout(100 * time.Millisecond).WithBaseURL("http://10.255.255.1").WithMaxRetries(0)
+	client := NewClient(config)
 	scannerOps := client.Scanner()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
@@ -124,7 +130,8 @@ func TestScannerOperations_AsyncMethods(t *testing.T) {
 }
 
 func TestCodeSubmissionOperations_AsyncMethods(t *testing.T) {
-	client := NewClient(NewConfig().WithAPIKey("test-key"))
+	config := NewConfig().WithAPIKey("test-key").WithTimeout(100 * time.Millisecond).WithBaseURL("http://10.255.255.1").WithMaxRetries(0)
+	client := NewClient(config)
 	codeOps := client.CodeSubmission()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)

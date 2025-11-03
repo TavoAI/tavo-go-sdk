@@ -15,6 +15,16 @@ type Client struct {
 	httpClient *resty.Client
 }
 
+// GetConfig returns the client configuration
+func (c *Client) GetConfig() *Config {
+	return c.config
+}
+
+// GetBaseURL returns the base URL for API requests
+func (c *Client) GetBaseURL() string {
+	return c.config.BaseURL + "/api/" + c.config.APIVersion
+}
+
 // NewClient creates a new Tavo API client
 func NewClient(config *Config) *Client {
 	if config == nil {
